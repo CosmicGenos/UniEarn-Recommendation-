@@ -3,8 +3,7 @@ from typing import List, Dict, Any
 
 from fastapi import HTTPException
 from fastapi.params import Depends
-from qdrant_client.http.models import Filter, FieldCondition, MatchValue, PointStruct, UpdateResult
-
+from qdrant_client.http.models import Filter, FieldCondition, MatchValue, PointStruct, UpdateResult, PointIdsList
 
 from databaseConnections.QdrandDatabaseConnection import QdrantConnection,get_qdrant_connection
 from datamodels.ResponseDataModels import SearchResult
@@ -64,8 +63,6 @@ class JobRepository:
                     job_id=point.payload['job_id'],
                     title=point.payload['title'],
                     category=point.payload['category'],
-                    location=point.payload['location'],
-                    salary=point.payload['salary'],
                     similarity_score=point.score
                 )
                 for point in sorted_results
@@ -147,6 +144,52 @@ class JobRepository:
                 }
             )
 
+    def update_job(self, job_id: int, job_embedding: List[float], job_payload: Dict[str, Any]) -> UpdateResult:
+
+        try:
+            client = self.qclient.get_client()
+
+            # upsert with the same ID to completely replace the existing point, this mean update or insert
+            result = client.upsert(
+                collection_name=self.collection_name,
+                points=[PointStruct(
+                    id=job_id,  # Using the same ID
+                    payload=job_payload,
+                    vector=job_embedding
+                )]
+            )
+
+            return result
+
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail={"message": f"Failed to update job {job_id}", "error": str(e)}
+            )
+
+    from qdrant_client.http.models import Filter, FieldCondition, MatchValue, PointStruct, UpdateResult, PointIdsList
+
+    def delete_job(self, job_id: int) -> bool:
+
+        try:
+            client = self.qclient.get_client()
+
+            points_selector = PointIdsList(
+                points=[job_id]
+            )
+
+            client.delete(
+                collection_name=self.collection_name,
+                points_selector=points_selector
+            )
+
+            return True
+
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail={"message": f"Failed to delete job {job_id}", "error": str(e)}
+            )
 
 def get_job_repo(qclient: QdrantConnection = Depends(get_qdrant_connection)):
     return JobRepository(qclient)

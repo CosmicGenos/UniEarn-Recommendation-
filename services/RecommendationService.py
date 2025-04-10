@@ -24,8 +24,6 @@ class RecommendationService:
             Job Title: {request.title}
             Company: {request.company}
             Category: {request.category}
-            Location: {request.location}
-            Salary: {request.salary}
             Job Description: {request.jobDescription}
             """.strip()
 
@@ -34,9 +32,7 @@ class RecommendationService:
             "title": request.title,
             "category": request.category,
             "status": request.status,
-            "location": request.location,
-            "finished_at": request.finished_at,
-            "salary": request.salary
+            "start_at": request.start_at,
         }
 
         return embedding_text, payload
@@ -45,6 +41,7 @@ class RecommendationService:
         self.collection_manager.create_collection_if_not_exists()
         returnList = []
         for job_detail in job_details:
+            print(job_detail.start_at)
             job_embedding_text, job_payload = self.job_preprocessing(job_detail)
             job_embedding = self.embedding_model.encode(job_embedding_text)
             if len(job_embedding) != self.expected_embed_size:
@@ -59,6 +56,20 @@ class RecommendationService:
             raise ValueError(f"Expected embedding size of 384, got {len(student_embedding)}")
         return self.job_repo.search_similar_jobs(student_embedding)
 
+    def update_job(self, job_detail: JobRequestData) -> UpdateResult:
+
+        job_embedding_text, job_payload = self.job_preprocessing(job_detail)
+        job_embedding = self.embedding_model.encode(job_embedding_text)
+
+        if len(job_embedding) != self.expected_embed_size:
+            raise ValueError(f"Expected embedding size of {self.expected_embed_size}, got {len(job_embedding)}")
+
+        return self.job_repo.update_job(job_detail.jobID, job_embedding, job_payload)
+
+    def delete_job(self, job_id: int) -> bool:
+
+        return self.job_repo.delete_job(job_id)
+
 def get_recommendation_service(
     job_repo: JobRepository = Depends(get_job_repo),
     collection_manager: QdrantCollectionManager = Depends(get_qdrant_collection_manager),
@@ -69,6 +80,8 @@ def get_recommendation_service(
         collection_manager=collection_manager,
         embedding_model=embedding_model
     )
+
+
 
 
 

@@ -13,9 +13,7 @@ class QdrantCollectionManager:
                 "title": models.PayloadSchemaType.KEYWORD,
                 "category": models.PayloadSchemaType.KEYWORD,
                 "status": models.PayloadSchemaType.KEYWORD,
-                "location": models.PayloadSchemaType.KEYWORD,
-                "finished_at": models.PayloadSchemaType.DATETIME,
-                "salary": models.PayloadSchemaType.KEYWORD
+                "start_at": models.PayloadSchemaType.DATETIME
             },
             "indexed_fields": ["status", "job_id"]
         }
