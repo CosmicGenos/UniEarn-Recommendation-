@@ -6,9 +6,7 @@ class JobRequestData(BaseModel):
     jobDescription : str
     category: str
     status: str
-    location : str
-    finished_at : str
-    salary :str
+    start_at : str
     company : str
 
 class StudentDetails(BaseModel):
